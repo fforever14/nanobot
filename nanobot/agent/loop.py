@@ -18,8 +18,11 @@ from nanobot.agent.tools.web import WebSearchTool, WebFetchTool
 from nanobot.agent.tools.message import MessageTool
 from nanobot.agent.tools.spawn import SpawnTool
 from nanobot.agent.tools.cron import CronTool
+from nanobot.agent.tools.serverchan import ServerchanPushTool
 from nanobot.agent.subagent import SubagentManager
 from nanobot.session.manager import SessionManager
+from nanobot.config.schema import ToolsConfig
+from nanobot.cron import CronService
 
 
 class AgentLoop:
@@ -41,21 +44,17 @@ class AgentLoop:
         workspace: Path,
         model: str | None = None,
         max_iterations: int = 20,
-        brave_api_key: str | None = None,
-        exec_config: "ExecToolConfig | None" = None,
-        cron_service: "CronService | None" = None,
+        tools_config: ToolsConfig | None = None,
+        cron_service: CronService | None = None,
         restrict_to_workspace: bool = False,
         session_manager: SessionManager | None = None,
     ):
-        from nanobot.config.schema import ExecToolConfig
-        from nanobot.cron.service import CronService
         self.bus = bus
         self.provider = provider
         self.workspace = workspace
         self.model = model or provider.get_default_model()
         self.max_iterations = max_iterations
-        self.brave_api_key = brave_api_key
-        self.exec_config = exec_config or ExecToolConfig()
+        self.tools_config = tools_config
         self.cron_service = cron_service
         self.restrict_to_workspace = restrict_to_workspace
         
@@ -67,11 +66,10 @@ class AgentLoop:
             workspace=workspace,
             bus=bus,
             model=self.model,
-            brave_api_key=brave_api_key,
-            exec_config=self.exec_config,
+            brave_api_key= self.tools_config.web.search.api_key,
+            exec_config=self.tools_config.exec,
             restrict_to_workspace=restrict_to_workspace,
         )
-        
         self._running = False
         self._register_default_tools()
     
@@ -87,12 +85,12 @@ class AgentLoop:
         # Shell tool
         self.tools.register(ExecTool(
             working_dir=str(self.workspace),
-            timeout=self.exec_config.timeout,
+            timeout=self.tools_config.exec.timeout,
             restrict_to_workspace=self.restrict_to_workspace,
         ))
         
         # Web tools
-        self.tools.register(WebSearchTool(api_key=self.brave_api_key))
+        self.tools.register(WebSearchTool(api_key=self.tools_config.web.search.api_key))
         self.tools.register(WebFetchTool())
         
         # Message tool
@@ -106,6 +104,10 @@ class AgentLoop:
         # Cron tool (for scheduling)
         if self.cron_service:
             self.tools.register(CronTool(self.cron_service))
+
+        if self.tools_config.serverchan.send_key:
+            serverchan_tool = ServerchanPushTool(self.tools_config.serverchan)
+            self.tools.register(serverchan_tool)
     
     async def run(self) -> None:
         """Run the agent loop, processing messages from the bus."""

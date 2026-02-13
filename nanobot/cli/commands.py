@@ -297,6 +297,7 @@ def gateway(
     from nanobot.bus.queue import MessageBus
     from nanobot.agent.loop import AgentLoop
     from nanobot.channels.manager import ChannelManager
+    from nanobot.gateway.server import GatewayServer
     from nanobot.session.manager import SessionManager
     from nanobot.cron.service import CronService
     from nanobot.cron.types import CronJob
@@ -324,8 +325,7 @@ def gateway(
         workspace=config.workspace_path,
         model=config.agents.defaults.model,
         max_iterations=config.agents.defaults.max_tool_iterations,
-        brave_api_key=config.tools.web.search.api_key or None,
-        exec_config=config.tools.exec,
+        tools_config=config.tools,
         cron_service=cron,
         restrict_to_workspace=config.tools.restrict_to_workspace,
         session_manager=session_manager,
@@ -376,6 +376,11 @@ def gateway(
     
     console.print(f"[green]✓[/green] Heartbeat: every 30m")
     
+    # Create HTTP API server
+    gateway = GatewayServer(config, channels.channels, port, verbose)
+    console.print(f"[green]✓[/green] HTTP API: http://0.0.0.0:{port}")
+    console.print(f"[dim]  - GET /health - Health check[/dim]")
+
     async def run():
         try:
             await cron.start()
@@ -383,6 +388,7 @@ def gateway(
             await asyncio.gather(
                 agent.run(),
                 channels.start_all(),
+                gateway.start_async()
             )
         except KeyboardInterrupt:
             console.print("\nShutting down...")
@@ -390,7 +396,8 @@ def gateway(
             cron.stop()
             agent.stop()
             await channels.stop_all()
-    
+            gateway.stop()
+
     asyncio.run(run())
 
 
@@ -428,9 +435,8 @@ def agent(
         bus=bus,
         provider=provider,
         workspace=config.workspace_path,
-        brave_api_key=config.tools.web.search.api_key or None,
-        exec_config=config.tools.exec,
-        restrict_to_workspace=config.tools.restrict_to_workspace,
+        tools_config=config.tools,
+        restrict_to_workspace=config.tools.restrict_to_workspace
     )
     
     # Show spinner when logs are off (no output to miss); skip when logs are on
