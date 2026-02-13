@@ -19,3 +19,6 @@ poetry.lock
 .pytest_cache/
 tests/
 botpy.log
+CLAUDE.md
+uv.lock
+.DS_Store
