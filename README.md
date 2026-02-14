@@ -18,6 +18,8 @@
 
 📏 Real-time line count: **3,582 lines** (run `bash core_agent_lines.sh` to verify anytime)
 
+This is a personal version.
+
 ## 📢 News
 
 - **2026-02-12** 🧠 Redesigned memory system — Less code, more reliable. Join the [discussion](https://github.com/HKUDS/nanobot/discussions/566) about it!

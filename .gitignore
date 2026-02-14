@@ -19,3 +19,11 @@ poetry.lock
 .pytest_cache/
 tests/
 botpy.log
+
+
+
+# custom
+CLAUDE.md
+Agent.md
+uv.lock
+.DS_Store
