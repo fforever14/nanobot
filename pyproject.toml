@@ -38,6 +38,8 @@ dependencies = [
     "qq-botpy>=1.0.0",
     "python-socks[asyncio]>=2.4.0",
     "prompt-toolkit>=3.0.0",
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
     "serverchan-sdk>=1.0.6",
 ]
 

@@ -22,6 +22,8 @@ from nanobot.agent.tools.serverchan import ServerchanPushTool
 from nanobot.agent.memory import MemoryStore
 from nanobot.agent.subagent import SubagentManager
 from nanobot.session.manager import SessionManager
+from nanobot.config.schema import ToolsConfig
+from nanobot.cron import CronService
 
 
 class AgentLoop:
@@ -71,7 +73,6 @@ class AgentLoop:
             exec_config=self.tools_config.exec,
             restrict_to_workspace=self.tools_config.restrict_to_workspace,
         )
-        
         self._running = False
         self._register_default_tools()
     

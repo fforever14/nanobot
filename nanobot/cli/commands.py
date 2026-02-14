@@ -302,6 +302,7 @@ def gateway(
     from nanobot.bus.queue import MessageBus
     from nanobot.agent.loop import AgentLoop
     from nanobot.channels.manager import ChannelManager
+    from nanobot.gateway.server import GatewayServer
     from nanobot.session.manager import SessionManager
     from nanobot.cron.service import CronService
     from nanobot.cron.types import CronJob
@@ -380,6 +381,11 @@ def gateway(
     
     console.print(f"[green]✓[/green] Heartbeat: every 30m")
     
+    # Create HTTP API server
+    gateway = GatewayServer(config, channels.channels, port, verbose)
+    console.print(f"[green]✓[/green] HTTP API: http://0.0.0.0:{port}")
+    console.print(f"[dim]  - GET /health - Health check[/dim]")
+
     async def run():
         try:
             await cron.start()
@@ -387,6 +393,7 @@ def gateway(
             await asyncio.gather(
                 agent.run(),
                 channels.start_all(),
+                gateway.start_async()
             )
         except KeyboardInterrupt:
             console.print("\nShutting down...")
@@ -394,7 +401,8 @@ def gateway(
             cron.stop()
             agent.stop()
             await channels.stop_all()
-    
+            gateway.stop()
+
     asyncio.run(run())
 
 
